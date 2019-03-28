@@ -9,9 +9,38 @@ function useToggle(initialState = false) {
   return [state, toggle];
 }
 
+//Reducer hook allow you to abstract functionality out of the component
+//Now any state change will occur in this function, allowing easier debugging
+function gameReducer(state, action) {
+  const { squares, xIsNext } = state;
+
+  switch (action.type) {
+    case 'SELECT_SQUARE': {
+      const { square } = action;
+      const winner = calculateWinner(squares);
+      if (winner || squares[square]) {
+        return state;
+      }
+
+      const squaresCopy = [...squares];
+      squaresCopy[square] = xIsNext ? 'X' : 'O';
+      return {
+        squares: squaresCopy,
+        xIsNext: !xIsNext
+      };
+    }
+    default: {
+      throw new Error(`Unhandled action type: ${action.type}`);
+    }
+  }
+}
+
 function Board() {
-  const [squares, setSquares] = React.useState(Array(9).fill(null));
-  const [xIsNext, toggleXIsNext] = useToggle(true);
+  const [state, dispatch] = React.useReducer(gameReducer, {
+    squares: Array(9).fill(null),
+    xIsNext: true
+  });
+  const { squares, xIsNext } = state;
   const winner = calculateWinner(squares);
 
   function renderSquare(index) {
@@ -23,15 +52,7 @@ function Board() {
   }
 
   function selectSquare(square) {
-    if (winner || squares[square]) {
-      return;
-    }
-    setSquares(s => {
-      const squaresCopy = [...s];
-      squaresCopy[square] = xIsNext ? 'X' : 'O';
-      return squaresCopy;
-    });
-    toggleXIsNext();
+    dispatch({ type: 'SELECT_SQUARE', square });
   }
 
   let status;
